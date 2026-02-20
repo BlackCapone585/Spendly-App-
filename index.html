@@ -1,0 +1,1592 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Spendly — Учёт финансов</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box}
+
+        :root{
+            --primary:#6C5CE7;
+            --primary-light:#A29BFE;
+            --accent:#00CEC9;
+            --accent-light:#81ECEC;
+            --dark:#060614;
+            --dark2:#0c0c24;
+            --glass:rgba(255,255,255,0.04);
+            --glass-border:rgba(255,255,255,0.08);
+            --glass-strong:rgba(255,255,255,0.07);
+            --glass-border-strong:rgba(255,255,255,0.12);
+            --text:#e8e8f0;
+            --text-muted:#8888a8;
+            --grad:linear-gradient(135deg,#6C5CE7,#00CEC9);
+            --grad2:linear-gradient(135deg,#6C5CE7 0%,#a855f7 50%,#00CEC9 100%);
+        }
+
+        html{scroll-behavior:smooth}
+
+        body{
+            font-family:'Inter',-apple-system,sans-serif;
+            background:var(--dark);
+            color:var(--text);
+            overflow-x:hidden;
+            line-height:1.6;
+            cursor:default;
+        }
+
+        ::selection{
+            background:rgba(108,92,231,0.4);
+            color:#fff;
+        }
+
+        /* ===== PRELOADER ===== */
+        #preloader{
+            position:fixed;inset:0;
+            background:var(--dark);
+            display:flex;align-items:center;justify-content:center;
+            z-index:99999;
+            transition:opacity .6s cubic-bezier(.4,0,.2,1),visibility .6s;
+        }
+        #preloader.gone{opacity:0;visibility:hidden;pointer-events:none}
+
+        .pre-logo{
+            font-size:3rem;font-weight:900;
+            background:var(--grad);
+            -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+            background-clip:text;
+            animation:prePulse 1.2s ease-in-out infinite;
+        }
+        .pre-bar{width:160px;height:3px;background:rgba(255,255,255,.06);border-radius:10px;margin-top:22px;overflow:hidden}
+        .pre-bar-in{height:100%;background:var(--grad);border-radius:10px;animation:preSlide 1s ease-in-out infinite}
+
+        @keyframes prePulse{0%,100%{opacity:1}50%{opacity:.3}}
+        @keyframes preSlide{0%{width:0;margin-left:0}50%{width:60%}100%{width:0;margin-left:100%}}
+
+        /* ===== CURSOR TRAIL ===== */
+        .trail-dot{
+            position:fixed;
+            width:6px;height:6px;
+            border-radius:50%;
+            pointer-events:none;
+            z-index:99990;
+            background:var(--grad);
+            opacity:0;
+            transition:opacity .3s;
+            mix-blend-mode:screen;
+        }
+
+        /* ===== PARTICLES ===== */
+        #particles{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden}
+        .pt{
+            position:absolute;border-radius:50%;opacity:0;
+            animation:ptFloat linear infinite;
+        }
+        @keyframes ptFloat{
+            0%{transform:translateY(100vh) scale(.3);opacity:0}
+            12%{opacity:.5}
+            88%{opacity:.5}
+            100%{transform:translateY(-8vh) scale(1);opacity:0}
+        }
+
+        /* ===== FLOATING SHAPES ===== */
+        .bg-shape{
+            position:fixed;
+            border-radius:50%;
+            filter:blur(80px);
+            z-index:0;
+            pointer-events:none;
+            animation:shapeFloat 20s ease-in-out infinite alternate;
+        }
+        .bg-shape.s1{width:500px;height:500px;background:rgba(108,92,231,.1);top:-10%;left:-10%}
+        .bg-shape.s2{width:400px;height:400px;background:rgba(0,206,201,.07);bottom:-5%;right:-8%;animation-delay:-7s}
+        .bg-shape.s3{width:300px;height:300px;background:rgba(168,85,247,.06);top:40%;right:20%;animation-delay:-14s}
+
+        @keyframes shapeFloat{
+            0%{transform:translate(0,0) scale(1)}
+            33%{transform:translate(30px,-40px) scale(1.05)}
+            66%{transform:translate(-20px,30px) scale(.95)}
+            100%{transform:translate(15px,-15px) scale(1.02)}
+        }
+
+        /* ===== RIPPLE ===== */
+        .ripple{
+            position:fixed;
+            border-radius:50%;
+            border:1px solid rgba(108,92,231,.3);
+            pointer-events:none;
+            z-index:99;
+            animation:rippleOut .8s ease-out forwards;
+        }
+        @keyframes rippleOut{
+            0%{width:0;height:0;opacity:.6}
+            100%{width:150px;height:150px;opacity:0}
+        }
+
+        /* ===== NAVBAR ===== */
+        .navbar{
+            position:fixed;top:0;left:0;width:100%;z-index:1000;
+            padding:18px 0;
+            transition:all .4s cubic-bezier(.4,0,.2,1);
+        }
+        .navbar.scrolled{
+            background:rgba(6,6,20,.7);
+            backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);
+            padding:10px 0;
+            border-bottom:1px solid var(--glass-border);
+            box-shadow:0 8px 32px rgba(0,0,0,.3);
+        }
+        .nav-in{max-width:1200px;margin:0 auto;padding:0 30px;display:flex;align-items:center;justify-content:space-between}
+
+        .nav-logo{display:flex;align-items:center;gap:10px;text-decoration:none;position:relative}
+        .nav-logo-box{
+            width:42px;height:42px;
+            background:var(--grad);
+            border-radius:13px;
+            display:flex;align-items:center;justify-content:center;
+            font-size:1.15rem;color:#fff;font-weight:900;
+            box-shadow:0 4px 20px rgba(108,92,231,.35);
+            transition:transform .4s cubic-bezier(.34,1.56,.64,1);
+        }
+        .nav-logo:hover .nav-logo-box{transform:rotate(360deg) scale(1.1)}
+        .nav-logo-name{
+            font-size:1.4rem;font-weight:800;
+            background:var(--grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+        }
+
+        .nav-menu{display:flex;align-items:center;gap:30px;list-style:none}
+        .nav-menu a{
+            color:var(--text-muted);text-decoration:none;font-weight:500;font-size:.93rem;
+            transition:color .3s;position:relative;
+        }
+        .nav-menu a::after{
+            content:'';position:absolute;bottom:-4px;left:50%;width:0;height:2px;
+            background:var(--grad);transition:all .3s;border-radius:2px;transform:translateX(-50%);
+        }
+        .nav-menu a:hover{color:#fff}
+        .nav-menu a:hover::after{width:100%}
+
+        .nav-dl{
+            background:var(--glass-strong);
+            backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
+            border:1px solid var(--glass-border-strong);
+            color:#fff;padding:10px 22px;border-radius:13px;
+            font-weight:600;font-size:.9rem;cursor:pointer;text-decoration:none;
+            transition:all .3s;display:inline-flex;align-items:center;gap:7px;
+            box-shadow:0 4px 15px rgba(108,92,231,.2);
+        }
+        .nav-dl:hover{
+            background:rgba(108,92,231,.25);
+            border-color:rgba(108,92,231,.4);
+            transform:translateY(-2px);
+            box-shadow:0 8px 25px rgba(108,92,231,.35);
+        }
+
+        .burger{display:none;flex-direction:column;gap:5px;cursor:pointer;padding:5px;z-index:1002}
+        .burger span{width:24px;height:2px;background:var(--text);transition:all .3s;border-radius:2px;display:block}
+        .burger.on span:nth-child(1){transform:rotate(45deg) translate(5px,5px)}
+        .burger.on span:nth-child(2){opacity:0}
+        .burger.on span:nth-child(3){transform:rotate(-45deg) translate(5px,-5px)}
+
+        .mob-menu{
+            position:fixed;inset:0;
+            background:rgba(6,6,20,.95);
+            backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);
+            z-index:1001;display:flex;flex-direction:column;
+            align-items:center;justify-content:center;gap:26px;
+            opacity:0;visibility:hidden;transition:all .4s;
+        }
+        .mob-menu.on{opacity:1;visibility:visible}
+        .mob-menu a{color:#fff;text-decoration:none;font-size:1.35rem;font-weight:600;transition:all .3s}
+        .mob-menu a:hover{color:var(--primary-light);transform:scale(1.05)}
+
+        /* ===== HERO ===== */
+        .hero{
+            min-height:100vh;display:flex;align-items:center;justify-content:center;
+            position:relative;padding:120px 30px 80px;
+        }
+        .hero-grid{
+            position:absolute;inset:0;
+            background-image:
+                linear-gradient(rgba(108,92,231,.025) 1px,transparent 1px),
+                linear-gradient(90deg,rgba(108,92,231,.025) 1px,transparent 1px);
+            background-size:55px 55px;
+        }
+
+        .hero-content{text-align:center;max-width:880px;position:relative;z-index:2}
+
+        .hero-badge{
+            display:inline-flex;align-items:center;gap:8px;
+            background:var(--glass);
+            backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
+            border:1px solid var(--glass-border);
+            padding:8px 20px;border-radius:50px;
+            font-size:.84rem;color:var(--primary-light);font-weight:500;
+            margin-bottom:28px;
+            animation:fadeUp .7s ease forwards;animation-delay:.2s;opacity:0;
+        }
+
+        .hero-title{
+            font-size:clamp(2.3rem,6vw,4.3rem);font-weight:900;line-height:1.08;
+            margin-bottom:22px;
+            animation:fadeUp .7s ease forwards;animation-delay:.35s;opacity:0;
+        }
+
+        .gt{
+            background:var(--grad2);
+            -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+        }
+
+        .hero-desc{
+            font-size:clamp(1rem,2.5vw,1.18rem);color:var(--text-muted);
+            max-width:620px;margin:0 auto 36px;line-height:1.7;
+            animation:fadeUp .7s ease forwards;animation-delay:.5s;opacity:0;
+        }
+
+        .hero-btns{
+            display:flex;align-items:center;justify-content:center;gap:16px;flex-wrap:wrap;
+            animation:fadeUp .7s ease forwards;animation-delay:.65s;opacity:0;
+        }
+
+        .btn-g{
+            background:var(--glass-strong);
+            backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
+            border:1px solid var(--glass-border-strong);
+            color:#fff;padding:16px 38px;border-radius:16px;
+            font-size:1.05rem;font-weight:700;cursor:pointer;text-decoration:none;
+            display:inline-flex;align-items:center;gap:10px;
+            transition:all .35s cubic-bezier(.4,0,.2,1);
+            box-shadow:0 8px 32px rgba(108,92,231,.2);
+            position:relative;overflow:hidden;font-family:inherit;
+        }
+        .btn-g::before{
+            content:'';position:absolute;inset:0;
+            background:var(--grad);opacity:0;transition:opacity .35s;z-index:-1;
+        }
+        .btn-g:hover::before{opacity:1}
+        .btn-g:hover{
+            transform:translateY(-3px);
+            box-shadow:0 12px 40px rgba(108,92,231,.45);
+            border-color:rgba(108,92,231,.4);
+        }
+
+        .btn-o{
+            background:transparent;color:var(--text);
+            border:1px solid var(--glass-border-strong);
+            padding:15px 34px;border-radius:16px;font-size:1.05rem;font-weight:600;
+            cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;gap:10px;
+            transition:all .35s;font-family:inherit;
+            backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
+        }
+        .btn-o:hover{
+            border-color:var(--primary-light);
+            background:rgba(108,92,231,.08);
+            transform:translateY(-3px);
+        }
+
+        /* ===== 3D COIN ===== */
+        .coin-section{
+            padding:100px 30px;
+            position:relative;
+            display:flex;flex-direction:column;align-items:center;
+        }
+
+        .coin-title{
+            text-align:center;margin-bottom:50px;
+        }
+
+        .coin-container{
+            width:280px;height:280px;
+            perspective:1000px;
+            cursor:grab;
+            position:relative;
+        }
+        .coin-container:active{cursor:grabbing}
+
+        .coin-3d{
+            width:100%;height:100%;
+            position:relative;
+            transform-style:preserve-3d;
+            transition:transform .1s ease-out;
+            animation:coinIdle 6s ease-in-out infinite;
+        }
+
+        .coin-3d.dragging{animation:none !important;transition:none !important}
+
+        .coin-face{
+            position:absolute;inset:0;
+            border-radius:50%;
+            display:flex;align-items:center;justify-content:center;
+            backface-visibility:hidden;
+            border:4px solid rgba(255,215,0,.3);
+        }
+
+        .coin-front{
+            background:
+                radial-gradient(circle at 35% 35%,rgba(255,255,255,.15),transparent 60%),
+                linear-gradient(145deg,#2a1f6e,#1a1245);
+            box-shadow:
+                0 0 60px rgba(108,92,231,.3),
+                0 0 120px rgba(108,92,231,.1),
+                inset 0 0 40px rgba(108,92,231,.2),
+                inset 0 2px 0 rgba(255,255,255,.1);
+        }
+
+        .coin-front-content{
+            text-align:center;
+            position:relative;z-index:2;
+        }
+
+        .coin-s{
+            font-size:5rem;font-weight:900;
+            background:linear-gradient(145deg,#ffd700,#ffaa00,#ffd700);
+            -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+            filter:drop-shadow(0 2px 8px rgba(255,215,0,.4));
+            line-height:1;
+        }
+
+        .coin-label{
+            font-size:.85rem;font-weight:700;
+            color:rgba(255,215,0,.7);
+            letter-spacing:3px;
+            margin-top:5px;
+        }
+
+        .coin-ring{
+            position:absolute;inset:10px;
+            border:2px solid rgba(255,215,0,.15);
+            border-radius:50%;
+        }
+
+        .coin-ring2{
+            position:absolute;inset:18px;
+            border:1px solid rgba(255,215,0,.08);
+            border-radius:50%;
+        }
+
+        .coin-back{
+            background:
+                radial-gradient(circle at 65% 65%,rgba(255,255,255,.1),transparent 60%),
+                linear-gradient(145deg,#0d3b3a,#0a2525);
+            transform:rotateY(180deg);
+            box-shadow:
+                0 0 60px rgba(0,206,201,.2),
+                inset 0 0 40px rgba(0,206,201,.15);
+        }
+
+        .coin-back-content{text-align:center}
+
+        .coin-back-icon{
+            font-size:3.5rem;
+            color:rgba(0,206,201,.7);
+            margin-bottom:8px;
+            filter:drop-shadow(0 2px 8px rgba(0,206,201,.3));
+        }
+
+        .coin-back-text{
+            font-size:.75rem;font-weight:600;
+            color:rgba(0,206,201,.6);
+            letter-spacing:2px;
+        }
+
+        .coin-shadow{
+            width:200px;height:20px;
+            background:radial-gradient(ellipse,rgba(108,92,231,.2),transparent 70%);
+            margin:30px auto 0;
+            border-radius:50%;
+            animation:coinShadow 6s ease-in-out infinite;
+        }
+
+        .coin-hint{
+            text-align:center;margin-top:20px;
+            font-size:.85rem;color:var(--text-muted);
+            animation:fadeInOut 3s ease-in-out infinite;
+        }
+
+        @keyframes coinIdle{
+            0%{transform:rotateY(0deg) rotateX(5deg)}
+            50%{transform:rotateY(180deg) rotateX(-5deg)}
+            100%{transform:rotateY(360deg) rotateX(5deg)}
+        }
+
+        @keyframes coinShadow{
+            0%,100%{transform:scaleX(1);opacity:.6}
+            25%{transform:scaleX(.7);opacity:.3}
+            50%{transform:scaleX(1);opacity:.6}
+            75%{transform:scaleX(.7);opacity:.3}
+        }
+
+        @keyframes fadeInOut{
+            0%,100%{opacity:.4}
+            50%{opacity:.8}
+        }
+
+        .coin-sparkle{
+            position:absolute;
+            width:4px;height:4px;
+            background:#ffd700;
+            border-radius:50%;
+            pointer-events:none;
+            animation:sparkle .6s ease-out forwards;
+        }
+
+        @keyframes sparkle{
+            0%{transform:scale(1);opacity:1}
+            100%{transform:scale(0) translate(var(--tx),var(--ty));opacity:0}
+        }
+
+        /* ===== GLASS SECTIONS ===== */
+        .glass-card{
+            background:var(--glass);
+            backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
+            border:1px solid var(--glass-border);
+            border-radius:24px;
+            transition:all .4s cubic-bezier(.4,0,.2,1);
+            position:relative;overflow:hidden;
+        }
+        .glass-card::before{
+            content:'';position:absolute;top:0;left:0;right:0;height:1px;
+            background:linear-gradient(90deg,transparent,rgba(255,255,255,.1),transparent);
+        }
+        .glass-card:hover{
+            background:var(--glass-strong);
+            border-color:var(--glass-border-strong);
+            transform:translateY(-6px);
+            box-shadow:0 20px 50px rgba(0,0,0,.3),0 0 40px rgba(108,92,231,.06);
+        }
+
+        .section-wrap{max-width:1200px;margin:0 auto}
+
+        .section-head{text-align:center;margin-bottom:60px}
+
+        .section-tag{
+            display:inline-flex;align-items:center;gap:7px;
+            background:var(--glass);
+            backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
+            border:1px solid var(--glass-border);
+            padding:6px 16px;border-radius:50px;
+            font-size:.78rem;color:var(--primary-light);font-weight:500;
+            margin-bottom:18px;text-transform:uppercase;letter-spacing:1px;
+        }
+
+        .section-heading{
+            font-size:clamp(1.9rem,4vw,2.8rem);font-weight:800;
+            margin-bottom:14px;line-height:1.2;
+        }
+
+        .section-sub{
+            font-size:1.05rem;color:var(--text-muted);
+            max-width:580px;margin:0 auto;line-height:1.7;
+        }
+
+        /* ===== ABOUT ===== */
+        .about{padding:110px 30px;position:relative}
+
+        .about-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:22px}
+
+        .about-card{padding:38px 28px}
+
+        .about-ico{
+            width:58px;height:58px;border-radius:16px;
+            display:flex;align-items:center;justify-content:center;
+            font-size:1.4rem;margin-bottom:18px;
+            backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
+        }
+        .about-ico.i1{background:rgba(108,92,231,.12);color:var(--primary-light)}
+        .about-ico.i2{background:rgba(0,206,201,.12);color:var(--accent-light)}
+        .about-ico.i3{background:rgba(253,121,168,.12);color:#fd79a8}
+
+        .about-card h3{font-size:1.15rem;font-weight:700;margin-bottom:10px}
+        .about-card p{color:var(--text-muted);font-size:.93rem;line-height:1.7}
+
+        /* ===== WHY US ===== */
+        .why-section{padding:110px 30px;position:relative}
+
+        .why-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:22px}
+
+        .why-card{padding:36px 30px;display:flex;gap:20px;align-items:flex-start}
+
+        .why-num{
+            font-size:2.6rem;font-weight:900;
+            background:var(--grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+            line-height:1;min-width:52px;
+        }
+        .why-card h3{font-size:1.12rem;font-weight:700;margin-bottom:8px}
+        .why-card p{color:var(--text-muted);font-size:.93rem;line-height:1.7}
+
+        /* ===== FEATURES ===== */
+        .features{padding:110px 30px;position:relative}
+
+        .feat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:18px}
+
+        .feat-card{padding:32px 22px;text-align:center}
+
+        .feat-ico{
+            width:58px;height:58px;border-radius:16px;
+            display:flex;align-items:center;justify-content:center;
+            font-size:1.4rem;margin:0 auto 16px;
+            transition:transform .35s cubic-bezier(.34,1.56,.64,1);
+        }
+        .feat-card:hover .feat-ico{transform:scale(1.15) rotate(5deg)}
+
+        .feat-ico.c1{background:rgba(108,92,231,.12);color:var(--primary-light)}
+        .feat-ico.c2{background:rgba(0,206,201,.12);color:var(--accent-light)}
+        .feat-ico.c3{background:rgba(253,121,168,.12);color:#fd79a8}
+        .feat-ico.c4{background:rgba(225,177,44,.12);color:#fdcb6e}
+
+        .feat-card h3{font-size:1rem;font-weight:700;margin-bottom:8px}
+        .feat-card p{color:var(--text-muted);font-size:.83rem;line-height:1.6}
+
+        /* ===== CONTACT ===== */
+        .contact{padding:110px 30px;position:relative}
+
+        .contact-box{
+            max-width:700px;margin:0 auto;
+            padding:55px 45px;text-align:center;
+        }
+
+        .contact-ico-wrap{
+            width:70px;height:70px;border-radius:20px;
+            background:rgba(108,92,231,.12);
+            display:flex;align-items:center;justify-content:center;
+            font-size:1.6rem;color:var(--primary-light);
+            margin:0 auto 22px;
+        }
+
+        .contact-box h2{font-size:clamp(1.5rem,3vw,2rem);font-weight:800;margin-bottom:12px}
+        .contact-box p{color:var(--text-muted);font-size:.95rem;line-height:1.7;margin-bottom:28px}
+
+        .contact-email{
+            display:inline-flex;align-items:center;gap:10px;
+            background:var(--glass);
+            backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
+            border:1px solid var(--glass-border);
+            padding:14px 28px;border-radius:14px;
+            color:var(--primary-light);font-weight:600;font-size:1rem;
+            text-decoration:none;transition:all .35s;
+            cursor:pointer;
+        }
+        .contact-email:hover{
+            background:rgba(108,92,231,.15);
+            border-color:rgba(108,92,231,.3);
+            transform:translateY(-2px);
+            box-shadow:0 8px 25px rgba(108,92,231,.2);
+        }
+
+        .contact-copied{
+            display:inline-block;
+            margin-top:12px;
+            font-size:.8rem;
+            color:var(--accent);
+            opacity:0;
+            transition:opacity .3s;
+        }
+        .contact-copied.show{opacity:1}
+
+        /* ===== CTA ===== */
+        .cta-section{padding:100px 30px}
+
+        .cta-box{
+            max-width:860px;margin:0 auto;
+            padding:75px 55px;text-align:center;
+            position:relative;overflow:hidden;
+        }
+
+        .cta-glow1{
+            position:absolute;width:280px;height:280px;
+            background:radial-gradient(circle,rgba(108,92,231,.15),transparent 70%);
+            top:-90px;right:-90px;border-radius:50%;
+        }
+        .cta-glow2{
+            position:absolute;width:220px;height:220px;
+            background:radial-gradient(circle,rgba(0,206,201,.1),transparent 70%);
+            bottom:-70px;left:-70px;border-radius:50%;
+        }
+
+        .cta-box h2{
+            font-size:clamp(1.7rem,4vw,2.5rem);font-weight:800;
+            margin-bottom:16px;position:relative;z-index:1;
+        }
+        .cta-box>p{
+            color:var(--text-muted);font-size:1.05rem;
+            max-width:480px;margin:0 auto 30px;line-height:1.7;
+            position:relative;z-index:1;
+        }
+        .cta-box .btn-g{position:relative;z-index:1;padding:18px 48px;font-size:1.08rem}
+
+        /* ===== FOOTER ===== */
+        .footer{padding:50px 30px 26px;border-top:1px solid var(--glass-border)}
+
+        .footer-in{
+            max-width:1200px;margin:0 auto;
+            display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px;
+        }
+
+        .footer-left{display:flex;align-items:center;gap:10px}
+        .footer-ico{
+            width:34px;height:34px;background:var(--grad);border-radius:10px;
+            display:flex;align-items:center;justify-content:center;
+            font-size:.9rem;color:#fff;font-weight:900;
+        }
+        .footer-name{
+            font-size:1.15rem;font-weight:700;
+            background:var(--grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+        }
+
+        .footer-copy{color:var(--text-muted);font-size:.82rem}
+
+        .footer-links{display:flex;gap:12px}
+        .footer-link{
+            width:38px;height:38px;border-radius:11px;
+            background:var(--glass);
+            backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
+            border:1px solid var(--glass-border);
+            display:flex;align-items:center;justify-content:center;
+            color:var(--text-muted);text-decoration:none;transition:all .3s;font-size:.95rem;
+        }
+        .footer-link:hover{
+            background:var(--grad);color:#fff;transform:translateY(-3px);
+            border-color:transparent;box-shadow:0 5px 15px rgba(108,92,231,.3);
+        }
+
+        /* ===== SCROLL TOP ===== */
+        .to-top{
+            position:fixed;bottom:28px;right:28px;
+            width:48px;height:48px;
+            background:var(--glass-strong);
+            backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
+            border:1px solid var(--glass-border-strong);
+            border-radius:14px;color:#fff;font-size:1.1rem;
+            cursor:pointer;z-index:100;display:flex;align-items:center;justify-content:center;
+            opacity:0;visibility:hidden;transform:translateY(16px);
+            transition:all .35s;
+        }
+        .to-top.show{opacity:1;visibility:visible;transform:translateY(0)}
+        .to-top:hover{transform:translateY(-3px);background:rgba(108,92,231,.3);border-color:rgba(108,92,231,.4)}
+
+        /* ===== EASTER EGG: KONAMI OVERLAY ===== */
+        .konami-overlay{
+            position:fixed;inset:0;z-index:99999;
+            background:rgba(6,6,20,.95);
+            backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
+            display:flex;align-items:center;justify-content:center;
+            opacity:0;visibility:hidden;transition:all .5s;
+            cursor:pointer;
+        }
+        .konami-overlay.show{opacity:1;visibility:visible}
+        .konami-text{
+            text-align:center;
+            animation:fadeUp .6s ease forwards;
+        }
+        .konami-text h2{
+            font-size:2.5rem;font-weight:900;margin-bottom:15px;
+            background:linear-gradient(135deg,#ffd700,#ff6b6b,#6C5CE7,#00CEC9);
+            background-size:200% 200%;
+            -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+            animation:rainbowText 3s ease infinite;
+        }
+        .konami-text p{color:var(--text-muted);font-size:1rem}
+
+        @keyframes rainbowText{
+            0%{background-position:0% 50%}
+            50%{background-position:100% 50%}
+            100%{background-position:0% 50%}
+        }
+
+        /* ===== EASTER EGG: MATRIX ===== */
+        #matrixCanvas{
+            position:fixed;inset:0;z-index:99998;
+            pointer-events:none;opacity:0;
+            transition:opacity .5s;
+        }
+        #matrixCanvas.show{opacity:.15;pointer-events:auto}
+
+        /* ===== CONFETTI ===== */
+        .confetti-piece{
+            position:fixed;
+            width:8px;height:8px;
+            z-index:99997;
+            pointer-events:none;
+            animation:confettiFall linear forwards;
+        }
+        @keyframes confettiFall{
+            0%{transform:translateY(-10px) rotate(0deg);opacity:1}
+            100%{transform:translateY(100vh) rotate(720deg);opacity:0}
+        }
+
+        /* ===== REVEAL ===== */
+        .rv{opacity:0;transform:translateY(35px);transition:opacity .7s ease,transform .7s ease}
+        .rv.vis{opacity:1;transform:translateY(0)}
+
+        @keyframes fadeUp{
+            from{opacity:0;transform:translateY(28px)}
+            to{opacity:1;transform:translateY(0)}
+        }
+
+        /* ===== TILT GLOW ON CARDS ===== */
+        .tilt-glow{
+            position:absolute;
+            width:200px;height:200px;
+            background:radial-gradient(circle,rgba(108,92,231,.12),transparent 70%);
+            border-radius:50%;
+            pointer-events:none;
+            opacity:0;
+            transition:opacity .3s;
+        }
+        .glass-card:hover .tilt-glow{opacity:1}
+
+        /* ===== RESPONSIVE ===== */
+        @media(max-width:1024px){
+            .feat-grid{grid-template-columns:repeat(2,1fr)}
+            .about-grid{grid-template-columns:repeat(2,1fr)}
+        }
+        @media(max-width:768px){
+            .nav-menu{display:none}
+            .burger{display:flex}
+            .about-grid,.why-grid,.feat-grid{grid-template-columns:1fr}
+            .cta-box{padding:45px 28px}
+            .contact-box{padding:40px 25px}
+            .footer-in{flex-direction:column;text-align:center}
+            .coin-container{width:220px;height:220px}
+            .coin-s{font-size:3.8rem}
+        }
+        @media(max-width:480px){
+            .hero-btns{flex-direction:column;width:100%}
+            .btn-g,.btn-o{width:100%;justify-content:center}
+            .hero-stats{flex-direction:column;gap:16px}
+            .stat-line{width:36px;height:1px}
+        }
+
+        /* ===== HERO STATS ===== */
+        .hero-stats{
+            display:flex;align-items:center;justify-content:center;gap:42px;
+            margin-top:50px;
+            animation:fadeUp .7s ease forwards;animation-delay:.8s;opacity:0;
+        }
+        .hero-stat-v{
+            font-size:1.7rem;font-weight:800;
+            background:var(--grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+            display:flex;align-items:center;justify-content:center;
+        }
+        .hero-stat-l{font-size:.84rem;color:var(--text-muted);margin-top:3px;text-align:center}
+        .stat-line{width:1px;height:34px;background:var(--glass-border)}
+
+        /* ===== PHONE MOCKUP ===== */
+        .hero-phone{
+            margin-top:55px;
+            animation:fadeUp .7s ease forwards;animation-delay:.95s;opacity:0;
+        }
+        .phone{
+            width:260px;height:520px;
+            background:var(--glass);
+            backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
+            border:1px solid var(--glass-border-strong);
+            border-radius:34px;margin:0 auto;position:relative;overflow:hidden;
+            box-shadow:0 30px 60px rgba(0,0,0,.4),0 0 80px rgba(108,92,231,.08);
+            transform:perspective(800px) rotateX(4deg);
+            transition:transform .5s cubic-bezier(.4,0,.2,1);
+        }
+        .phone:hover{transform:perspective(800px) rotateX(0deg) scale(1.02)}
+        .phone::before{
+            content:'';position:absolute;top:0;left:0;right:0;height:1px;
+            background:linear-gradient(90deg,transparent,rgba(255,255,255,.15),transparent);
+        }
+
+        .ph-notch{width:100px;height:20px;background:var(--dark);border-radius:0 0 12px 12px;margin:0 auto}
+
+        .ph-ui{padding:16px;display:flex;flex-direction:column;gap:12px}
+
+        .ph-greet{font-size:.7rem;color:var(--text-muted);text-align:center}
+        .ph-bal-l{font-size:.63rem;color:var(--text-muted);text-align:center;margin-top:4px}
+        .ph-bal{
+            font-size:1.6rem;font-weight:800;text-align:center;
+            background:var(--grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+        }
+
+        .ph-chart{
+            background:var(--glass);border:1px solid var(--glass-border);
+            border-radius:14px;padding:12px;
+        }
+        .ph-chart-t{font-size:.65rem;color:var(--text-muted);margin-bottom:7px}
+        .ph-bars{display:flex;align-items:flex-end;gap:6px;height:50px}
+        .pb{
+            flex:1;
+            background:var(--grad);
+            border-radius:3px 3px 0 0;min-height:6px;opacity:.55;
+            transition:opacity .3s;
+        }
+        .pb:hover{opacity:1}
+
+        .ph-txns{display:flex;flex-direction:column;gap:7px}
+        .ph-tx{
+            display:flex;align-items:center;justify-content:space-between;
+            background:var(--glass);border-radius:10px;padding:8px 10px;
+        }
+        .ph-tx-l{display:flex;align-items:center;gap:8px}
+        .ph-tx-i{
+            width:28px;height:28px;border-radius:8px;
+            display:flex;align-items:center;justify-content:center;font-size:.7rem;
+        }
+        .ph-tx-n{font-size:.7rem;font-weight:600}
+        .ph-tx-c{font-size:.55rem;color:var(--text-muted)}
+        .ph-tx-a{font-size:.72rem;font-weight:700}
+        .red{color:#ff6b6b}
+        .grn{color:#51cf66}
+
+        /* ===== CLICK COUNTER EASTER EGG ===== */
+        .click-counter{
+            position:fixed;top:50%;left:50%;
+            transform:translate(-50%,-50%);
+            font-size:4rem;font-weight:900;
+            background:var(--grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+            pointer-events:none;z-index:9999;
+            opacity:0;
+            animation:clickPop .5s ease forwards;
+        }
+        @keyframes clickPop{
+            0%{opacity:1;transform:translate(-50%,-50%) scale(.5)}
+            50%{opacity:1;transform:translate(-50%,-50%) scale(1.3)}
+            100%{opacity:0;transform:translate(-50%,-50%) scale(1) translateY(-40px)}
+        }
+    </style>
+</head>
+<body>
+
+<!-- Preloader -->
+<div id="preloader">
+    <div style="text-align:center">
+        <div class="pre-logo">Spendly</div>
+        <div class="pre-bar"><div class="pre-bar-in"></div></div>
+    </div>
+</div>
+
+<!-- Matrix canvas (easter egg) -->
+<canvas id="matrixCanvas"></canvas>
+
+<!-- Konami overlay (easter egg) -->
+<div class="konami-overlay" id="konamiOverlay" onclick="this.classList.remove('show')">
+    <div class="konami-text">
+        <h2>&#127881; Ты нашёл секрет! &#127881;</h2>
+        <p>Konami Code активирован! Ты настоящий геймер &#128526;</p>
+        <p style="margin-top:10px;font-size:.8rem;color:#666">Нажми чтобы закрыть</p>
+    </div>
+</div>
+
+<!-- Background shapes -->
+<div class="bg-shape s1"></div>
+<div class="bg-shape s2"></div>
+<div class="bg-shape s3"></div>
+
+<!-- Particles -->
+<div id="particles"></div>
+
+<!-- Cursor trail dots -->
+<div id="trailBox"></div>
+
+<!-- Navbar -->
+<nav class="navbar" id="navbar">
+    <div class="nav-in">
+        <a href="#" class="nav-logo" id="navLogo">
+            <div class="nav-logo-box">S</div>
+            <span class="nav-logo-name">Spendly</span>
+        </a>
+        <ul class="nav-menu">
+            <li><a href="#about">О приложении</a></li>
+            <li><a href="#why">Почему мы</a></li>
+            <li><a href="#features">Функции</a></li>
+            <li><a href="#contact-section">Контакты</a></li>
+            <li>
+                <a href="https://github.com/BlackCapone585/Spendly-download" target="_blank" class="nav-dl">
+                    <i class="fa-solid fa-download"></i> Скачать
+                </a>
+            </li>
+        </ul>
+        <div class="burger" id="burger">
+            <span></span><span></span><span></span>
+        </div>
+    </div>
+</nav>
+
+<!-- Mobile menu -->
+<div class="mob-menu" id="mobMenu">
+    <a href="#about" onclick="closeM()">О приложении</a>
+    <a href="#why" onclick="closeM()">Почему мы</a>
+    <a href="#features" onclick="closeM()">Функции</a>
+    <a href="#contact-section" onclick="closeM()">Контакты</a>
+    <a href="https://github.com/BlackCapone585/Spendly-download" target="_blank" class="btn-g" onclick="closeM()">
+        <i class="fa-solid fa-download"></i> Скачать
+    </a>
+</div>
+
+<!-- ===== HERO ===== -->
+<section class="hero" id="hero">
+    <div class="hero-grid"></div>
+    <div class="hero-content">
+        <div class="hero-badge">
+            <i class="fa-solid fa-star"></i>
+            Бесплатное приложение для учёта финансов
+        </div>
+
+        <h1 class="hero-title">
+            Контролируй свои<br>
+            <span class="gt">финансы с Spendly</span>
+        </h1>
+
+        <p class="hero-desc">
+            Простое и удобное приложение для отслеживания доходов и расходов.
+            Анализируй свои траты, ставь цели и управляй бюджетом — всё в одном месте.
+        </p>
+
+        <div class="hero-btns">
+            <a href="https://github.com/BlackCapone585/Spendly-download" target="_blank" class="btn-g">
+                <i class="fa-solid fa-download"></i> Скачать бесплатно
+            </a>
+            <a href="#about" class="btn-o">
+                <i class="fa-solid fa-arrow-down"></i> Узнать больше
+            </a>
+        </div>
+
+        <div class="hero-stats">
+            <div>
+                <div class="hero-stat-v">100%</div>
+                <div class="hero-stat-l">Бесплатно</div>
+            </div>
+            <div class="stat-line"></div>
+            <div>
+                <div class="hero-stat-v"><i class="fa-solid fa-shield-halved"></i></div>
+                <div class="hero-stat-l">Безопасно</div>
+            </div>
+            <div class="stat-line"></div>
+            <div>
+                <div class="hero-stat-v"><i class="fa-solid fa-bolt"></i></div>
+                <div class="hero-stat-l">Быстро</div>
+            </div>
+        </div>
+
+        <!-- Phone mockup -->
+        <div class="hero-phone">
+            <div class="phone">
+                <div class="ph-notch"></div>
+                <div class="ph-ui">
+                    <div>
+                        <div class="ph-greet">Добро пожаловать!</div>
+                        <div class="ph-bal-l">Общий баланс</div>
+                        <div class="ph-bal">124 500 &#8381;</div>
+                    </div>
+                    <div class="ph-chart">
+                        <div class="ph-chart-t">Расходы за неделю</div>
+                        <div class="ph-bars">
+                            <div class="pb" style="height:40%"></div>
+                            <div class="pb" style="height:65%"></div>
+                            <div class="pb" style="height:35%"></div>
+                            <div class="pb" style="height:80%"></div>
+                            <div class="pb" style="height:55%"></div>
+                            <div class="pb" style="height:90%"></div>
+                            <div class="pb" style="height:45%"></div>
+                        </div>
+                    </div>
+                    <div class="ph-txns">
+                        <div class="ph-tx">
+                            <div class="ph-tx-l">
+                                <div class="ph-tx-i" style="background:rgba(253,121,168,.12);color:#fd79a8"><i class="fa-solid fa-cart-shopping"></i></div>
+                                <div><div class="ph-tx-n">Продукты</div><div class="ph-tx-c">Еда</div></div>
+                            </div>
+                            <div class="ph-tx-a red">-2 340 &#8381;</div>
+                        </div>
+                        <div class="ph-tx">
+                            <div class="ph-tx-l">
+                                <div class="ph-tx-i" style="background:rgba(81,207,102,.12);color:#51cf66"><i class="fa-solid fa-briefcase"></i></div>
+                                <div><div class="ph-tx-n">Зарплата</div><div class="ph-tx-c">Доход</div></div>
+                            </div>
+                            <div class="ph-tx-a grn">+85 000 &#8381;</div>
+                        </div>
+                        <div class="ph-tx">
+                            <div class="ph-tx-l">
+                                <div class="ph-tx-i" style="background:rgba(108,92,231,.12);color:#a29bfe"><i class="fa-solid fa-gas-pump"></i></div>
+                                <div><div class="ph-tx-n">Бензин</div><div class="ph-tx-c">Транспорт</div></div>
+                            </div>
+                            <div class="ph-tx-a red">-3 200 &#8381;</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ===== ABOUT ===== -->
+<section class="about" id="about">
+    <div class="section-wrap">
+        <div class="section-head rv">
+            <div class="section-tag"><i class="fa-solid fa-circle-info"></i> О приложении</div>
+            <h2 class="section-heading">Для чего нужен <span class="gt">Spendly?</span></h2>
+            <p class="section-sub">Spendly — это ваш персональный финансовый помощник, который поможет навести порядок в деньгах</p>
+        </div>
+        <div class="about-grid">
+            <div class="about-card glass-card rv">
+                <div class="tilt-glow"></div>
+                <div class="about-ico i1"><i class="fa-solid fa-wallet"></i></div>
+                <h3>Учёт расходов и доходов</h3>
+                <p>Записывайте каждую транзакцию — от чашки кофе до зарплаты. Spendly покажет, куда уходят ваши деньги и откуда приходят.</p>
+            </div>
+            <div class="about-card glass-card rv">
+                <div class="tilt-glow"></div>
+                <div class="about-ico i2"><i class="fa-solid fa-chart-pie"></i></div>
+                <h3>Анализ и статистика</h3>
+                <p>Наглядные графики и диаграммы помогут понять структуру ваших трат. Увидьте полную картину за любой период.</p>
+            </div>
+            <div class="about-card glass-card rv">
+                <div class="tilt-glow"></div>
+                <div class="about-ico i3"><i class="fa-solid fa-bullseye"></i></div>
+                <h3>Финансовые цели</h3>
+                <p>Ставьте цели и копите на мечту. Spendly покажет, сколько осталось и когда вы достигнете цели при текущем темпе.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ===== 3D COIN ===== -->
+<section class="coin-section" id="coin-section">
+    <div class="coin-title rv">
+        <div class="section-tag"><i class="fa-solid fa-coins"></i> Интерактив</div>
+        <h2 class="section-heading">Покрути <span class="gt">монету</span></h2>
+        <p class="section-sub">Зажми и тяни чтобы вращать. Или просто наблюдай за анимацией</p>
+    </div>
+    <div class="coin-container" id="coinBox">
+        <div class="coin-3d" id="coin3d">
+            <div class="coin-face coin-front">
+                <div class="coin-ring"></div>
+                <div class="coin-ring2"></div>
+                <div class="coin-front-content">
+                    <div class="coin-s">S</div>
+                    <div class="coin-label">SPENDLY</div>
+                </div>
+            </div>
+            <div class="coin-face coin-back">
+                <div class="coin-ring"></div>
+                <div class="coin-ring2"></div>
+                <div class="coin-back-content">
+                    <div class="coin-back-icon"><i class="fa-solid fa-chart-line"></i></div>
+                    <div class="coin-back-text">FINANCE</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="coin-shadow"></div>
+    <div class="coin-hint"><i class="fa-solid fa-hand-pointer"></i> Зажми и тяни для вращения</div>
+</section>
+
+<!-- ===== WHY US ===== -->
+<section class="why-section" id="why">
+    <div class="section-wrap">
+        <div class="section-head rv">
+            <div class="section-tag"><i class="fa-solid fa-star"></i> Преимущества</div>
+            <h2 class="section-heading">Почему именно <span class="gt">Spendly?</span></h2>
+            <p class="section-sub">Мы создали приложение, которое действительно удобно использовать каждый день</p>
+        </div>
+        <div class="why-grid">
+            <div class="why-card glass-card rv">
+                <div class="tilt-glow"></div>
+                <div class="why-num">01</div>
+                <div>
+                    <h3>Полностью бесплатно</h3>
+                    <p>Никаких скрытых платежей и подписок. Все возможности доступны сразу и навсегда — вы не заплатите ни копейки.</p>
+                </div>
+            </div>
+            <div class="why-card glass-card rv">
+                <div class="tilt-glow"></div>
+                <div class="why-num">02</div>
+                <div>
+                    <h3>Простой и понятный</h3>
+                    <p>Минималистичный дизайн. Начните пользоваться за 10 секунд — без регистрации и инструкций.</p>
+                </div>
+            </div>
+            <div class="why-card glass-card rv">
+                <div class="tilt-glow"></div>
+                <div class="why-num">03</div>
+                <div>
+                    <h3>Конфиденциальность</h3>
+                    <p>Ваши данные хранятся только на устройстве. Мы не собираем и не передаём информацию третьим лицам.</p>
+                </div>
+            </div>
+            <div class="why-card glass-card rv">
+                <div class="tilt-glow"></div>
+                <div class="why-num">04</div>
+                <div>
+                    <h3>Работает офлайн</h3>
+                    <p>Интернет не нужен. Записывайте расходы в метро, в поездке — приложение работает всегда и везде.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ===== FEATURES ===== -->
+<section class="features" id="features">
+    <div class="section-wrap">
+        <div class="section-head rv">
+            <div class="section-tag"><i class="fa-solid fa-puzzle-piece"></i> Функции</div>
+            <h2 class="section-heading">Всё что нужно — <span class="gt">внутри</span></h2>
+            <p class="section-sub">Набор функций, который закроет все потребности в учёте личных финансов</p>
+        </div>
+        <div class="feat-grid">
+            <div class="feat-card glass-card rv"><div class="tilt-glow"></div><div class="feat-ico c1"><i class="fa-solid fa-receipt"></i></div><h3>Доходы и расходы</h3><p>Быстрое добавление транзакций с категориями</p></div>
+            <div class="feat-card glass-card rv"><div class="tilt-glow"></div><div class="feat-ico c2"><i class="fa-solid fa-chart-line"></i></div><h3>Графики</h3><p>Визуализация трат по дням, неделям и месяцам</p></div>
+            <div class="feat-card glass-card rv"><div class="tilt-glow"></div><div class="feat-ico c3"><i class="fa-solid fa-tags"></i></div><h3>Категории</h3><p>Создавайте свои или используйте готовые</p></div>
+            <div class="feat-card glass-card rv"><div class="tilt-glow"></div><div class="feat-ico c4"><i class="fa-solid fa-bell"></i></div><h3>Напоминания</h3><p>Уведомления о платежах и превышении бюджета</p></div>
+            <div class="feat-card glass-card rv"><div class="tilt-glow"></div><div class="feat-ico c2"><i class="fa-solid fa-moon"></i></div><h3>Тёмная тема</h3><p>Красивый интерфейс, который бережёт глаза</p></div>
+            <div class="feat-card glass-card rv"><div class="tilt-glow"></div><div class="feat-ico c1"><i class="fa-solid fa-filter"></i></div><h3>Фильтры</h3><p>Поиск по транзакциям, датам и категориям</p></div>
+            <div class="feat-card glass-card rv"><div class="tilt-glow"></div><div class="feat-ico c3"><i class="fa-solid fa-piggy-bank"></i></div><h3>Накопления</h3><p>Создавайте цели и следите за прогрессом</p></div>
+            <div class="feat-card glass-card rv"><div class="tilt-glow"></div><div class="feat-ico c4"><i class="fa-solid fa-mobile-screen-button"></i></div><h3>Удобный UX</h3><p>Интуитивный интерфейс для каждого</p></div>
+        </div>
+    </div>
+</section>
+
+<!-- ===== CONTACT ===== -->
+<section class="contact" id="contact-section">
+    <div class="section-wrap">
+        <div class="contact-box glass-card rv">
+            <div class="tilt-glow"></div>
+            <div class="contact-ico-wrap"><i class="fa-solid fa-envelope"></i></div>
+            <h2>Нашли ошибку? Есть вопрос?</h2>
+            <p>Напишите нам на почту — мы ответим как можно скорее и обязательно поможем</p>
+            <a class="contact-email" id="copyEmail" title="Нажми чтобы скопировать">
+                <i class="fa-solid fa-copy"></i>
+                danilborovikov544@gmail.com
+            </a>
+            <div class="contact-copied" id="copiedMsg">&#10003; Скопировано в буфер обмена!</div>
+        </div>
+    </div>
+</section>
+
+<!-- ===== CTA ===== -->
+<section class="cta-section" id="download">
+    <div class="cta-box glass-card rv">
+        <div class="tilt-glow"></div>
+        <div class="cta-glow1"></div>
+        <div class="cta-glow2"></div>
+        <h2>Начни контролировать<br>свои финансы <span class="gt">сегодня</span></h2>
+        <p>Скачай Spendly бесплатно и сделай первый шаг к финансовой грамотности</p>
+        <a href="https://github.com/BlackCapone585/Spendly-download" target="_blank" class="btn-g" id="ctaDownload">
+            <i class="fa-solid fa-download"></i> Скачать Spendly
+        </a>
+    </div>
+</section>
+
+<!-- ===== FOOTER ===== -->
+<footer class="footer">
+    <div class="footer-in">
+        <div class="footer-left">
+            <div class="footer-ico">S</div>
+            <span class="footer-name">Spendly</span>
+        </div>
+        <div class="footer-copy">&copy; 2025 Spendly. Все права защищены.</div>
+        <div class="footer-links">
+            <a href="https://github.com/BlackCapone585" target="_blank" class="footer-link" title="GitHub"><i class="fa-brands fa-github"></i></a>
+            <a href="mailto:danilborovikov544@gmail.com" class="footer-link" title="Email"><i class="fa-solid fa-envelope"></i></a>
+        </div>
+    </div>
+</footer>
+
+<!-- Scroll to top -->
+<button class="to-top" id="toTop" title="Наверх"><i class="fa-solid fa-arrow-up"></i></button>
+
+<script>
+(function(){
+    // ===== PRELOADER =====
+    function hidePreloader(){
+        var p=document.getElementById('preloader');
+        if(p)p.classList.add('gone');
+    }
+    if(document.readyState==='complete'){setTimeout(hidePreloader,600)}
+    else{window.addEventListener('load',function(){setTimeout(hidePreloader,600)})}
+    setTimeout(hidePreloader,3500);
+
+    // ===== PARTICLES =====
+    var pBox=document.getElementById('particles');
+    var pColors=['rgba(108,92,231,.25)','rgba(0,206,201,.2)','rgba(168,85,247,.2)','rgba(253,121,168,.15)'];
+    for(var i=0;i<30;i++){
+        var d=document.createElement('div');d.className='pt';
+        var s=Math.random()*4+2;
+        d.style.width=s+'px';d.style.height=s+'px';
+        d.style.left=Math.random()*100+'%';
+        d.style.background=pColors[Math.floor(Math.random()*pColors.length)];
+        d.style.animationDuration=(Math.random()*20+12)+'s';
+        d.style.animationDelay=(Math.random()*14)+'s';
+        pBox.appendChild(d);
+    }
+
+    // ===== CURSOR TRAIL =====
+    var trailDots=[];
+    var trailCount=12;
+    var trailBox=document.getElementById('trailBox');
+    for(var i=0;i<trailCount;i++){
+        var dot=document.createElement('div');
+        dot.className='trail-dot';
+        dot.style.width=(6-i*0.3)+'px';
+        dot.style.height=(6-i*0.3)+'px';
+        trailBox.appendChild(dot);
+        trailDots.push({el:dot,x:0,y:0});
+    }
+
+    var mouseX=0,mouseY=0;
+    document.addEventListener('mousemove',function(e){
+        mouseX=e.clientX;mouseY=e.clientY;
+    });
+
+    function animateTrail(){
+        var x=mouseX,y=mouseY;
+        for(var i=0;i<trailDots.length;i++){
+            var d=trailDots[i];
+            d.x+=(x-d.x)*(.25-i*.015);
+            d.y+=(y-d.y)*(.25-i*.015);
+            d.el.style.left=d.x+'px';
+            d.el.style.top=d.y+'px';
+            d.el.style.opacity=(1-i/trailDots.length)*.5;
+            x=d.x;y=d.y;
+        }
+        requestAnimationFrame(animateTrail);
+    }
+
+    // Only show trail on desktop
+    if(window.innerWidth>768){animateTrail()}
+
+    // ===== RIPPLE ON CLICK =====
+    document.addEventListener('click',function(e){
+        var r=document.createElement('div');
+        r.className='ripple';
+        r.style.left=(e.clientX-75)+'px';
+        r.style.top=(e.clientY-75)+'px';
+        document.body.appendChild(r);
+        setTimeout(function(){r.remove()},800);
+    });
+
+    // ===== NAVBAR SCROLL =====
+    var nav=document.getElementById('navbar');
+    var toTop=document.getElementById('toTop');
+    window.addEventListener('scroll',function(){
+        if(window.scrollY>60){nav.classList.add('scrolled')}else{nav.classList.remove('scrolled')}
+        if(window.scrollY>500){toTop.classList.add('show')}else{toTop.classList.remove('show')}
+    });
+    toTop.addEventListener('click',function(){window.scrollTo({top:0,behavior:'smooth'})});
+
+    // ===== BURGER =====
+    var burger=document.getElementById('burger');
+    var mobMenu=document.getElementById('mobMenu');
+    burger.addEventListener('click',function(){
+        burger.classList.toggle('on');mobMenu.classList.toggle('on');
+        document.body.style.overflow=mobMenu.classList.contains('on')?'hidden':'';
+    });
+    window.closeM=function(){
+        burger.classList.remove('on');mobMenu.classList.remove('on');
+        document.body.style.overflow='';
+    };
+
+    // ===== SCROLL REVEAL =====
+    var rvEls=document.querySelectorAll('.rv');
+    function checkReveal(){
+        for(var i=0;i<rvEls.length;i++){
+            var t=rvEls[i].getBoundingClientRect().top;
+            if(t<window.innerHeight-70){rvEls[i].classList.add('vis')}
+        }
+    }
+    window.addEventListener('scroll',checkReveal);
+    window.addEventListener('resize',checkReveal);
+    setTimeout(checkReveal,100);
+    setTimeout(checkReveal,1000);
+
+    // ===== SMOOTH SCROLL =====
+    var anchors=document.querySelectorAll('a[href^="#"]');
+    for(var i=0;i<anchors.length;i++){
+        anchors[i].addEventListener('click',function(e){
+            var href=this.getAttribute('href');
+            if(href==='#')return;
+            var target=document.querySelector(href);
+            if(target){e.preventDefault();target.scrollIntoView({behavior:'smooth',block:'start'})}
+        });
+    }
+
+    // ===== TILT GLOW ON CARDS =====
+    var cards=document.querySelectorAll('.glass-card');
+    for(var i=0;i<cards.length;i++){
+        (function(card){
+            card.addEventListener('mousemove',function(e){
+                var rect=card.getBoundingClientRect();
+                var x=e.clientX-rect.left;
+                var y=e.clientY-rect.top;
+                var glow=card.querySelector('.tilt-glow');
+                if(glow){
+                    glow.style.left=(x-100)+'px';
+                    glow.style.top=(y-100)+'px';
+                }
+            });
+        })(cards[i]);
+    }
+
+    // ===== COPY EMAIL =====
+    var copyBtn=document.getElementById('copyEmail');
+    var copiedMsg=document.getElementById('copiedMsg');
+    copyBtn.addEventListener('click',function(){
+        var email='danilborovikov544@gmail.com';
+        if(navigator.clipboard){
+            navigator.clipboard.writeText(email);
+        }else{
+            var ta=document.createElement('textarea');
+            ta.value=email;document.body.appendChild(ta);
+            ta.select();document.execCommand('copy');
+            document.body.removeChild(ta);
+        }
+        copiedMsg.classList.add('show');
+        setTimeout(function(){copiedMsg.classList.remove('show')},2500);
+    });
+
+    // ===== 3D COIN DRAG =====
+    var coinBox=document.getElementById('coinBox');
+    var coin3d=document.getElementById('coin3d');
+    var isDragging=false;
+    var startX=0,startY=0;
+    var rotX=5,rotY=0;
+    var currentRotX=5,currentRotY=0;
+
+    function onDragStart(e){
+        isDragging=true;
+        coin3d.classList.add('dragging');
+        var point=e.touches?e.touches[0]:e;
+        startX=point.clientX;startY=point.clientY;
+        currentRotX=rotX;currentRotY=rotY;
+    }
+
+    function onDragMove(e){
+        if(!isDragging)return;
+        e.preventDefault();
+        var point=e.touches?e.touches[0]:e;
+        var dx=point.clientX-startX;
+        var dy=point.clientY-startY;
+        rotY=currentRotY+dx*.8;
+        rotX=currentRotX-dy*.5;
+        rotX=Math.max(-60,Math.min(60,rotX));
+        coin3d.style.transform='rotateX('+rotX+'deg) rotateY('+rotY+'deg)';
+    }
+
+    function onDragEnd(){
+        isDragging=false;
+        coin3d.classList.remove('dragging');
+        // Add spin sparkles
+        for(var i=0;i<8;i++){
+            createSparkle();
+        }
+    }
+
+    coinBox.addEventListener('mousedown',onDragStart);
+    document.addEventListener('mousemove',onDragMove);
+    document.addEventListener('mouseup',onDragEnd);
+    coinBox.addEventListener('touchstart',onDragStart,{passive:false});
+    document.addEventListener('touchmove',onDragMove,{passive:false});
+    document.addEventListener('touchend',onDragEnd);
+
+    // Double-click coin for super spin
+    var coinClickCount=0;
+    coinBox.addEventListener('click',function(){
+        coinClickCount++;
+        if(coinClickCount>=2){
+            coinClickCount=0;
+            // Super spin!
+            coin3d.classList.add('dragging');
+            var spins=0;
+            var spinInterval=setInterval(function(){
+                rotY+=15;
+                coin3d.style.transform='rotateX(5deg) rotateY('+rotY+'deg)';
+                spins++;
+                if(spins>48){
+                    clearInterval(spinInterval);
+                    coin3d.classList.remove('dragging');
+                    // Confetti burst!
+                    launchConfetti();
+                }
+            },16);
+        }
+        setTimeout(function(){coinClickCount=0},400);
+    });
+
+    function createSparkle(){
+        var spark=document.createElement('div');
+        spark.className='coin-sparkle';
+        var rect=coinBox.getBoundingClientRect();
+        spark.style.left=(rect.left+rect.width/2)+'px';
+        spark.style.top=(rect.top+rect.height/2)+'px';
+        var angle=Math.random()*Math.PI*2;
+        var dist=60+Math.random()*40;
+        spark.style.setProperty('--tx',Math.cos(angle)*dist+'px');
+        spark.style.setProperty('--ty',Math.sin(angle)*dist+'px');
+        document.body.appendChild(spark);
+        setTimeout(function(){spark.remove()},600);
+    }
+
+    // ===== CONFETTI =====
+    function launchConfetti(){
+        var colors=['#6C5CE7','#00CEC9','#ffd700','#fd79a8','#a855f7','#51cf66','#ff6b6b'];
+        for(var i=0;i<60;i++){
+            (function(idx){
+                setTimeout(function(){
+                    var c=document.createElement('div');
+                    c.className='confetti-piece';
+                    c.style.left=Math.random()*100+'vw';
+                    c.style.top='-10px';
+                    c.style.background=colors[Math.floor(Math.random()*colors.length)];
+                    c.style.width=(Math.random()*8+4)+'px';
+                    c.style.height=(Math.random()*8+4)+'px';
+                    c.style.borderRadius=Math.random()>.5?'50%':'2px';
+                    c.style.animationDuration=(Math.random()*2+1.5)+'s';
+                    document.body.appendChild(c);
+                    setTimeout(function(){c.remove()},4000);
+                },idx*30);
+            })(i);
+        }
+    }
+
+    // ===== LOGO CLICK COUNTER (EASTER EGG) =====
+    var logoClicks=0;
+    var navLogo=document.getElementById('navLogo');
+    navLogo.addEventListener('click',function(e){
+        e.preventDefault();
+        logoClicks++;
+
+        // Show click number
+        var pop=document.createElement('div');
+        pop.className='click-counter';
+        pop.textContent=logoClicks;
+        document.body.appendChild(pop);
+        setTimeout(function(){pop.remove()},500);
+
+        // Easter eggs at certain click counts
+        if(logoClicks===7){
+            launchConfetti();
+        }
+        if(logoClicks===15){
+            document.body.style.transition='filter .5s';
+            document.body.style.filter='hue-rotate(180deg)';
+            setTimeout(function(){document.body.style.filter=''},2000);
+        }
+        if(logoClicks===25){
+            // Shake everything!
+            document.body.style.animation='shakeAll .5s ease';
+            setTimeout(function(){document.body.style.animation=''},500);
+        }
+        if(logoClicks===50){
+            launchConfetti();launchConfetti();
+            alert('🏆 Ты нажал 50 раз! Ты легенда!');
+        }
+    });
+
+    // Shake keyframe
+    var shakeStyle=document.createElement('style');
+    shakeStyle.textContent='@keyframes shakeAll{0%,100%{transform:translateX(0)}25%{transform:translateX(-8px)}50%{transform:translateX(8px)}75%{transform:translateX(-4px)}}';
+    document.head.appendChild(shakeStyle);
+
+    // ===== KONAMI CODE (EASTER EGG) =====
+    var konamiCode=[38,38,40,40,37,39,37,39,66,65];
+    var konamiPos=0;
+    document.addEventListener('keydown',function(e){
+        if(e.keyCode===konamiCode[konamiPos]){
+            konamiPos++;
+            if(konamiPos===konamiCode.length){
+                konamiPos=0;
+                document.getElementById('konamiOverlay').classList.add('show');
+                launchConfetti();
+            }
+        }else{
+            konamiPos=0;
+        }
+
+        // "M" key = matrix effect toggle (easter egg)
+        if(e.key==='m'||e.key==='M'){
+            var mc=document.getElementById('matrixCanvas');
+            mc.classList.toggle('show');
+            if(mc.classList.contains('show')&&!mc.dataset.started){
+                mc.dataset.started='1';
+                startMatrix(mc);
+            }
+        }
+    });
+
+    // ===== MATRIX EFFECT =====
+    function startMatrix(canvas){
+        canvas.width=window.innerWidth;
+        canvas.height=window.innerHeight;
+        var ctx=canvas.getContext('2d');
+        var cols=Math.floor(canvas.width/18);
+        var drops=[];
+        for(var i=0;i<cols;i++){drops[i]=Math.random()*-100}
+        var chars='SPENDLY$01234567890';
+
+        function drawMatrix(){
+            ctx.fillStyle='rgba(6,6,20,.08)';
+            ctx.fillRect(0,0,canvas.width,canvas.height);
+            ctx.fillStyle='#6C5CE7';
+            ctx.font='14px monospace';
+            for(var i=0;i<drops.length;i++){
+                var ch=chars[Math.floor(Math.random()*chars.length)];
+                ctx.fillText(ch,i*18,drops[i]*18);
+                if(drops[i]*18>canvas.height&&Math.random()>.975){drops[i]=0}
+                drops[i]++;
+            }
+            requestAnimationFrame(drawMatrix);
+        }
+        drawMatrix();
+
+        window.addEventListener('resize',function(){
+            canvas.width=window.innerWidth;
+            canvas.height=window.innerHeight;
+        });
+    }
+
+    // ===== CTA DOWNLOAD CONFETTI =====
+    var ctaDl=document.getElementById('ctaDownload');
+    ctaDl.addEventListener('click',function(){
+        launchConfetti();
+    });
+
+    // ===== SECRET: TRIPLE CLICK ANYWHERE REVEALS QUOTE =====
+    var tripleTimer=null;
+    var tripleCount=0;
+    document.addEventListener('click',function(){
+        tripleCount++;
+        clearTimeout(tripleTimer);
+        tripleTimer=setTimeout(function(){tripleCount=0},400);
+        if(tripleCount===3){
+            tripleCount=0;
+            var quotes=[
+                '"Деньги любят счёт" — Народная мудрость',
+                '"Не тот богат, кто много зарабатывает, а тот, кто разумно тратит"',
+                '"Финансовая свобода начинается с контроля расходов"',
+                '"Каждый сэкономленный рубль — это заработанный рубль"',
+                '"Spendly — твой лучший финансовый друг!" 💜'
+            ];
+            var q=quotes[Math.floor(Math.random()*quotes.length)];
+            var qEl=document.createElement('div');
+            qEl.style.cssText='position:fixed;bottom:30px;left:50%;transform:translateX(-50%);background:rgba(108,92,231,.15);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border:1px solid rgba(108,92,231,.3);padding:14px 28px;border-radius:14px;color:#a29bfe;font-size:.9rem;font-weight:500;z-index:9999;animation:fadeUp .4s ease;white-space:nowrap;max-width:90vw;overflow:hidden;text-overflow:ellipsis';
+            qEl.textContent=q;
+            document.body.appendChild(qEl);
+            setTimeout(function(){qEl.style.transition='opacity .4s';qEl.style.opacity='0';setTimeout(function(){qEl.remove()},400)},3000);
+        }
+    });
+
+    // ===== HOVER SOUND EFFECT SIMULATION (visual) =====
+    // Cards pulse on hover with subtle animation
+    var allCards=document.querySelectorAll('.glass-card');
+    for(var i=0;i<allCards.length;i++){
+        allCards[i].addEventListener('mouseenter',function(){
+            this.style.transition='all .15s cubic-bezier(.34,1.56,.64,1)';
+        });
+        allCards[i].addEventListener('mouseleave',function(){
+            this.style.transition='all .4s cubic-bezier(.4,0,.2,1)';
+        });
+    }
+
+})();
+</script>
+
+</body>
+</html>
